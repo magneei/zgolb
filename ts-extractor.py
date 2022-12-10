@@ -2,46 +2,49 @@
 
 import yaml
 import asyncio
-from python_graphql_client import GraphqlClient
+import tibber
+import aiohttp
+import tsdb
 
 with open('config.yaml') as f:
 	config = yaml.load(f, Loader=yaml.FullLoader)
 
+def _callback(pkg):
+    data = pkg.get("data")
+    if data is None:
+        return
 
-headers = {
-	"Authorization": f"Bearer {config['tibber-token']}"
-}
+    #print(data.get("liveMeasurement"))
+    print(data.get("liveMeasurement")['power'])
+    tsdb.insert_ts("tibber","power",data.get("liveMeasurement")['power'])
 
-client = GraphqlClient(endpoint="https://api.tibber.com/v1-beta/gql",headers=headers)
+async def run():
+    await asyncio.sleep(1)
 
-query = """ 
-{
-  viewer {
-    websocketSubscriptionUrl
-  }
-}
-"""
+    async with aiohttp.ClientSession() as session: 
+        tibber_connection = tibber.Tibber(config['tibber-token'], websession=session, user_agent="zgolb")
+        await tibber_connection.update_info()
 
-data = client.execute(query=query)
+    await asyncio.sleep(1)
 
-sub_endpoint = data['data']['viewer']['websocketSubscriptionUrl']
-sclient = GraphqlClient(endpoint=sub_endpoint,headers=headers)
+    home = tibber_connection.get_homes()[0]
+    await home.rt_subscribe(_callback)
 
-query = """
-subscription{
-  liveMeasurement(homeId:"$homeId"){
-    timestamp
-    power
-    accumulatedConsumption
-    accumulatedCost
-    currency
-    minPower
-    averagePower
-    maxPower
-  }
-}
-"""
+    while(True):
+      await asyncio.sleep(1000)
 
-variables = { "homeId": config['tibber-home-id']  }
+async def test(): 
+  tibber_connection = tibber.Tibber(config['tibber-token'], user_agent="zgolb")
+  await tibber_connection.update_info()
+  print(tibber_connection.name)
 
-data = asyncio.run(sclient.subscribe(query=query,variables=variables,handle=print))
+  home = tibber_connection.get_homes()[0]
+  await home.update_info()
+  print(home.address1)
+
+  await home.update_price_info()
+  print(home.current_price_info)
+
+  await tibber_connection.close_connection()
+
+asyncio.run(run())
