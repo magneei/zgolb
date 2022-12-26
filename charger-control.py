@@ -14,7 +14,7 @@ zpauth = zaptec.auth(config['zaptec-user'],config['zaptec-password'])
 
 while(True):
     avg_power = tsdb.avg_measurement("tibber","power")
-    ic(f"Average Power", avg_power)
+    ic("Average Power", avg_power)
     if(avg_power):
         zpdata = zaptec.charger_info(config['zaptec-charger-id'],zpauth)
 
@@ -25,7 +25,7 @@ while(True):
         
         # amps calculated for IT real 3 phase charging 
         charging_budget_amps = int(charging_budget/230/sqrt(3))
-        ic(f"Calculated {charging_budget_amps} before sanitizing")
+        ic("Calculated amps before sanitizing",charging_budget_amps)
         charging_budget_amps = min(32, charging_budget_amps)
         charging_budget_amps = max(6, charging_budget_amps)
 

@@ -83,7 +83,7 @@ def charger_info(charger, auth):
 	return charger_data
 
 def charger_set_amps(installation_id, auth, amps):
-	ic(f"Setting amps",amps)
+	ic("Setting amps",amps)
 
 	payload = {
 		"availableCurrent": amps
