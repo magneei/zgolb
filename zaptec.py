@@ -82,4 +82,8 @@ def charger_info(charger, auth):
 
 	return charger_data
 
+def charger_set_amps(charger, auth, amps):
+	ic(f"Setting amps",amps,"Not implemented")
+	return None
+
 init()
