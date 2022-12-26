@@ -14,6 +14,8 @@ zpauth = zaptec.auth(config['zaptec-user'],config['zaptec-password'])
 
 while(True):
     avg_power = tsdb.avg_measurement("tibber","power")
+    avg_charge = tsdb.avg_measurement("zaptec","chargepower")
+
     ic("Average Power", avg_power)
     if(avg_power):
         zpdata = zaptec.charger_info(config['zaptec-charger-id'],zpauth)
@@ -21,7 +23,7 @@ while(True):
         if(avg_power > config['power-threshold']):
             ic("Power over threshold")
             
-        charging_budget = float(config['power-threshold']) - avg_power
+        charging_budget = float(config['power-threshold']) - avg_power + avg_charge
         
         # amps calculated for IT real 3 phase charging 
         charging_budget_amps = int(charging_budget/230/sqrt(3))
@@ -31,6 +33,8 @@ while(True):
 
         #check Zaptec (move dev code here)
         if('TotalChargePower' in zpdata):
+            tsdb.insert_ts("zaptec","chargepower",zpdata['TotalChargePower'])
+
             #Remove if True for adjustment only when actually charging
             if(float(zpdata['TotalChargePower']) > 0 or True):
                 ic("Adjusting amps to budget", charging_budget_amps)
