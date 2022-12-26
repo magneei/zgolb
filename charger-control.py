@@ -19,7 +19,7 @@ while(True):
     if(avg_charge is None):
         avg_charge = 0
 
-    ic("Average Power", avg_power)
+    ic("Average", avg_power, avg_charge)
     if(avg_power):
         zpdata = zaptec.charger_info(config['zaptec-charger-id'],zpauth)
 
