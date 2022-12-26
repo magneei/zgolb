@@ -16,6 +16,9 @@ while(True):
     avg_power = tsdb.avg_measurement("tibber","power")
     avg_charge = tsdb.avg_measurement("zaptec","chargepower")
 
+    if(avg_charge is None):
+        avg_charge = 0
+
     ic("Average Power", avg_power)
     if(avg_power):
         zpdata = zaptec.charger_info(config['zaptec-charger-id'],zpauth)
@@ -33,7 +36,7 @@ while(True):
 
         #check Zaptec (move dev code here)
         if('TotalChargePower' in zpdata):
-            tsdb.insert_ts("zaptec","chargepower",zpdata['TotalChargePower'])
+            tsdb.insert_ts("zaptec","chargepower",float(zpdata['TotalChargePower']))
 
             #Remove if True for adjustment only when actually charging
             if(float(zpdata['TotalChargePower']) > 0 or True):
