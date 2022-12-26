@@ -66,4 +66,20 @@ def lookup_observation(observation):
 	else:
 		return observation
 
+def charger_info(charger, auth): 
+	r = requests.get(f'https://api.zaptec.com/api/chargers/{charger}/state', headers=auth.auth_header)
+
+	try:
+		charger_state_data = json.loads(r.text)
+		charger_data = {}
+    	
+		for ch_s in charger_state_data:
+			if 'ValueAsString' in ch_s:
+				charger_data[lookup_observation(ch_s['StateId'])] = ch_s['ValueAsString']
+	except:
+		ic("Could not parse data")
+		return None
+
+	return charger_data
+
 init()
