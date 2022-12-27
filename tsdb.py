@@ -1,35 +1,39 @@
-from tinyflux import TinyFlux
-from tinyflux import Point
-from datetime import datetime,timezone, timedelta
-from tinyflux import TimeQuery
-from tinyflux import MeasurementQuery
+import yaml
 from icecream import ic
+import influxdb_client, os, time
+from influxdb_client import InfluxDBClient, Point, WritePrecision
+from influxdb_client.client.write_api import SYNCHRONOUS
 
-db = TinyFlux("zgolb.db")
+with open('config.yaml') as f:
+	config = yaml.load(f, Loader=yaml.FullLoader)
+
+token = config['influx-token']
+org = "charge"
+url = "https://westeurope-1.azure.cloud2.influxdata.com"
+
+client = influxdb_client.InfluxDBClient(url=url, token=token, org=org)
+write_api = client.write_api(write_options=SYNCHRONOUS)
 
 def insert_ts(measurement, field, value):
-    p = Point(
-        measurement=measurement,
-        time=datetime.now(timezone.utc),
-        tags={},
-        fields={field: value}
+    point = (
+        Point(measurement)
+        .field(field, value)
     )
-
-    db.insert(p)
+    write_api.write(bucket="zgolb", org="charge", record=point)
 
 def avg_measurement(measurement, field, minutes=5):
-    Time = TimeQuery()
+    query_api = client.query_api()
 
-    q1 = Time > datetime.now(timezone.utc)-timedelta(minutes=minutes)
-    q2 = Time < datetime.now(timezone.utc)
+    query = f"""from(bucket: "zgolb")
+    |> range(start: -{minutes}m)
+    |> filter(fn: (r) => r._measurement == "{measurement}")
+    |> mean()"""
+    tables = query_api.query(query, org="charge")
 
-    m = db.measurement(measurement)
-    data = m.search(q1 & q2)
+    avg = None
 
-    if data:
-        avg = sum([ p.fields[field] for p in data ]) / len(data)
-    else: 
-        ic('No data available')
-        avg = None 
-    
+    for table in tables:
+        for record in table.records:
+            avg = record.get_value()
+
     return avg
