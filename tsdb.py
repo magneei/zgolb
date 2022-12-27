@@ -12,8 +12,6 @@ from influxdb_client.client.write_api import SYNCHRONOUS
 with open('config.yaml') as f:
 	config = yaml.load(f, Loader=yaml.FullLoader)
 
-db = TinyFlux("zgolb.db")
-
 token = config['influx-token']
 org = "charge"
 url = "https://westeurope-1.azure.cloud2.influxdata.com"
@@ -29,23 +27,18 @@ def insert_ts(measurement, field, value):
     write_api.write(bucket="zgolb", org="charge", record=point)
 
 def avg_measurement(measurement, field, minutes=5):
-    Time = TimeQuery()
+    query_api = client.query_api()
 
-    q1 = Time > datetime.now(timezone.utc)-timedelta(minutes=minutes)
-    q2 = Time < datetime.now(timezone.utc)
+    query = f"""from(bucket: "zgolb")
+    |> range(start: -{minutes}m)
+    |> filter(fn: (r) => r._measurement == "{measurement}")
+    |> mean()"""
+    tables = query_api.query(query, org="charge")
 
-    m = db.measurement(measurement)
-    data = m.search(q1 & q2)
+    avg = None 
 
-    if data:
-        #avg = sum([p.fields[field] for p in data ]) / len(data)
-        sum = 0
-        for p in data:
-            ic(p)
-            sum += p.fields[field]
-        avg = sum/len(data)
-    else: 
-        ic('No data available')
-        avg = None 
-    
+    for table in tables:
+        for record in table.records:
+            avg = record.get_value()
+
     return avg
