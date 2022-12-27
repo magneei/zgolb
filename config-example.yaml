@@ -1,3 +1,8 @@
-tibber-home-id: ""
-tibber-token: ""
-power-threshold: 10000
+tibber-home-id: "<tibber home id>"
+tibber-token: "<token from tibber>"
+influx-token: "<token for influx db (free account sufficient)"
+zaptec-user: "<zaptec user>"
+zaptec-password: "<zaptec password>"
+zaptec-charger-id: "<charger id (from zaptec)>"
+zaptec-installation-id: "<installation id (from zaptec)"
+power-threshold: <threshold in watts, eg 10000>
