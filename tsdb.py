@@ -1,9 +1,4 @@
 import yaml
-from tinyflux import TinyFlux
-from tinyflux import Point
-from datetime import datetime,timezone, timedelta
-from tinyflux import TimeQuery
-from tinyflux import MeasurementQuery
 from icecream import ic
 import influxdb_client, os, time
 from influxdb_client import InfluxDBClient, Point, WritePrecision
@@ -35,7 +30,7 @@ def avg_measurement(measurement, field, minutes=5):
     |> mean()"""
     tables = query_api.query(query, org="charge")
 
-    avg = None 
+    avg = None
 
     for table in tables:
         for record in table.records:
