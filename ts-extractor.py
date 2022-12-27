@@ -5,6 +5,7 @@ import asyncio
 import tibber
 import aiohttp
 import tsdb
+from icecream import ic
 
 with open('config.yaml') as f:
 	config = yaml.load(f, Loader=yaml.FullLoader)
@@ -14,8 +15,7 @@ def _callback(pkg):
     if data is None:
         return
 
-    #print(data.get("liveMeasurement"))
-    print(data.get("liveMeasurement")['power'])
+    ic(data.get("liveMeasurement")['power'])
     tsdb.insert_ts("tibber","power",data.get("liveMeasurement")['power'])
 
 async def run():
