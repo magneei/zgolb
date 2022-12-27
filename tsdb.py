@@ -19,13 +19,14 @@ org = "charge"
 url = "https://westeurope-1.azure.cloud2.influxdata.com"
 
 client = influxdb_client.InfluxDBClient(url=url, token=token, org=org)
+write_api = client.write_api(write_options=SYNCHRONOUS)
 
 def insert_ts(measurement, field, value):
     point = (
         Point(measurement)
         .field(field, value)
     )
-    client.write_api.write(bucket="zgolb", org="charge", record=point)
+    write_api.write(bucket="zgolb", org="charge", record=point)
 
 def avg_measurement(measurement, field, minutes=5):
     Time = TimeQuery()
