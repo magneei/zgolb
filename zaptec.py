@@ -91,7 +91,6 @@ def charger_set_amps(installation_id, auth, amps):
 
 	r = requests.post(f'https://api.zaptec.com/api/installation/{installation_id}/update',headers=auth.auth_header,json=payload)
 	
-	print(r)
-	return None
+	return r
 
 init()
