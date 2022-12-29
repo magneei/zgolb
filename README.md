@@ -1,4 +1,4 @@
-# zgolb
+# Zaptec Go Load Balancer (ZGoLB)
 
 Simple tool to do load balancing of zaptec go charger using tibber pulse as Tibbers load balacing is unfortunately not working very well with smaller main fuses.
 
