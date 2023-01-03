@@ -82,14 +82,14 @@ def charger_info(charger, auth):
 
 	return charger_data
 
-def charger_set_amps(installation_id, auth, amps):
+def charger_set_amps(charger_id, auth, amps):
 	ic("Setting amps",amps)
 
 	payload = {
-		"availableCurrent": amps
+		"maxChargeCurrent": amps
 	}
 
-	r = requests.post(f'https://api.zaptec.com/api/installation/{installation_id}/update',headers=auth.auth_header,json=payload)
+	r = requests.post(f'https://api.zaptec.com/api/chargers/{charger_id}/update',headers=auth.auth_header,json=payload)
 	
 	return r
 
