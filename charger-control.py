@@ -41,6 +41,6 @@ while(True):
             #Remove if True for adjustment only when actually charging (to reduce api calls)
             if(float(zpdata['TotalChargePower']) > 0 or True):
                 ic("Adjusting amps to budget", charging_budget_amps)
-                zaptec.charger_set_amps(config['zaptec-installation-id'],zpauth,charging_budget_amps)
+                zaptec.charger_set_amps(config['zaptec-charger-id'],zpauth,charging_budget_amps)
 
     time.sleep(60)
