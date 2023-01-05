@@ -18,33 +18,37 @@ def _callback(pkg):
     ic(data.get("liveMeasurement")['power'])
     tsdb.insert_ts("tibber","power",data.get("liveMeasurement")['power'])
 
-async def run():
-    await asyncio.sleep(1)
 
-    async with aiohttp.ClientSession() as session: 
-        tibber_connection = tibber.Tibber(config['tibber-token'], websession=session, user_agent="zgolb")
-        await tibber_connection.update_info()
+from gql import Client, gql
+from gql.transport.aiohttp import AIOHTTPTransport
+from gql.transport.websockets import WebsocketsTransport
 
-    await asyncio.sleep(1)
+# Select your transport with a defined url endpoint
+transport = WebsocketsTransport(url="wss://websocket-api.tibber.com/v1-beta/gql/subscriptions", headers={'Authorization': 'REDACTED'})
 
-    home = tibber_connection.get_homes()[0]
-    await home.rt_subscribe(_callback)
+# Create a GraphQL client using the defined transport
+client = Client(transport=transport, fetch_schema_from_transport=True)
 
-    while(True):
-      await asyncio.sleep(1000)
+# Provide a GraphQL query
+query = gql(
+    f"""
+    subscription{{
+        liveMeasurement(homeId:"{config['tibber-home-id']}"){{
+            timestamp
+            power
+            accumulatedConsumption
+            accumulatedCost
+            currency
+            minPower
+            averagePower
+            maxPower
+          }}
+    }}
+"""
+)
+# Execute the query on the transport
+subgen = client.subscribe(query)
 
-async def test(): 
-  tibber_connection = tibber.Tibber(config['tibber-token'], user_agent="zgolb")
-  await tibber_connection.update_info()
-  print(tibber_connection.name)
-
-  home = tibber_connection.get_homes()[0]
-  await home.update_info()
-  print(home.address1)
-
-  await home.update_price_info()
-  print(home.current_price_info)
-
-  await tibber_connection.close_connection()
-
-asyncio.run(run())
+for result in subgen:
+    ic(result['liveMeasurement']['power'],result['liveMeasurement']['timestamp'])
+    tsdb.insert_ts("tibber","power",result['liveMeasurement']['power'])
