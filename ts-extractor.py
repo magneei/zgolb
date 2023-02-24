@@ -32,16 +32,17 @@ from gql.transport.websockets import WebsocketsTransport
 # Select your transport with a defined url endpoint
 transport = WebsocketsTransport(url="wss://websocket-api.tibber.com/v1-beta/gql/subscriptions", headers={'Authorization': 'REDACTED'})
 
-# Create a GraphQL client using the defined transport
-client = Client(transport=transport, fetch_schema_from_transport=True)
 
 def wdHandler():
-    ic("No data received for {WATCHDOG_TIMER} seconds, exiting")
+    ic("No data received for exiting",WATCHDOG_TIMER)
     sys.exit(1)
 
 wd = watchdog.Watchdog(WATCHDOG_TIMER, wdHandler)
 
 def main():
+    # Create a GraphQL client using the defined transport
+    client = Client(transport=transport, fetch_schema_from_transport=True)
+
     # Provide a GraphQL query
     query = gql(
         f"""
