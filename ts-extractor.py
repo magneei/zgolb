@@ -2,10 +2,16 @@
 
 import yaml
 import asyncio
-import tibber
 import aiohttp
 import tsdb
 from icecream import ic
+from time import sleep
+from websockets.exceptions import ConnectionClosedError
+import watchdog
+import sys
+
+#Constants
+WATCHDOG_TIMER = 180
 
 with open('config.yaml') as f:
 	config = yaml.load(f, Loader=yaml.FullLoader)
@@ -29,26 +35,41 @@ transport = WebsocketsTransport(url="wss://websocket-api.tibber.com/v1-beta/gql/
 # Create a GraphQL client using the defined transport
 client = Client(transport=transport, fetch_schema_from_transport=True)
 
-# Provide a GraphQL query
-query = gql(
-    f"""
-    subscription{{
-        liveMeasurement(homeId:"{config['tibber-home-id']}"){{
-            timestamp
-            power
-            accumulatedConsumption
-            accumulatedCost
-            currency
-            minPower
-            averagePower
-            maxPower
-          }}
-    }}
-"""
-)
-# Execute the query on the transport
-subgen = client.subscribe(query)
+def wdHandler():
+    ic("No data received for {WATCHDOG_TIMER} seconds, exiting")
+    sys.exit(1)
 
-for result in subgen:
-    ic(result['liveMeasurement']['power'],result['liveMeasurement']['timestamp'])
-    tsdb.insert_ts("tibber","power",result['liveMeasurement']['power'])
+wd = watchdog.Watchdog(WATCHDOG_TIMER, wdHandler)
+
+def main():
+    # Provide a GraphQL query
+    query = gql(
+        f"""
+        subscription{{
+            liveMeasurement(homeId:"{config['tibber-home-id']}"){{
+                timestamp
+                power
+                accumulatedConsumption
+                accumulatedCost
+                currency
+                minPower
+                averagePower
+                maxPower
+            }}
+        }}
+    """
+    )
+    # Execute the query on the transport
+    subgen = client.subscribe(query)
+
+    for result in subgen:
+        ic(result['liveMeasurement']['power'],result['liveMeasurement']['timestamp'])
+        tsdb.insert_ts("tibber","power",result['liveMeasurement']['power'])
+        wd.reset()
+
+while(True):
+    try:
+        main()
+    except ConnectionClosedError:
+        ic("Received connectionClosedError, restarting")
+    sleep(10)
