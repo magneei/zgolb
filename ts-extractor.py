@@ -49,12 +49,12 @@ def main():
             liveMeasurement(homeId:"{config['tibber-home-id']}"){{
                 timestamp
                 power
-                accumulatedConsumption
-                accumulatedCost
-                currency
-                minPower
-                averagePower
-                maxPower
+				voltagePhase1
+				voltagePhase2
+				voltagePhase3
+				currentL1
+				currentL2
+				currentL3
             }}
         }}
     """
@@ -63,8 +63,10 @@ def main():
     subgen = client.subscribe(query)
 
     for result in subgen:
-        ic(result['liveMeasurement']['power'],result['liveMeasurement']['timestamp'])
-        tsdb.insert_ts("tibber","power",result['liveMeasurement']['power'])
+        ic(result['liveMeasurement']['timestamp'])
+        for value in ['power', 'voltagePhase1', 'voltagePhase2', 'voltagePhase3', 'currentL1', 'currentL2', 'currentL3' ]:
+            ic(value,result['liveMeasurement'][value])
+            tsdb.insert_ts("tibber",value,result['liveMeasurement'][value])
         wd.reset()
 
 while(True):
