@@ -1,4 +1,4 @@
-#!/usr/bin/env python3 
+#!/usr/bin/env python3
 
 import yaml
 import asyncio
@@ -10,38 +10,38 @@ from websockets.exceptions import ConnectionClosedError
 import watchdog
 import sys
 
-#Constants
+# Constants
 WATCHDOG_TIMER = 180
 
-with open('config.yaml') as f:
-	config = yaml.load(f, Loader=yaml.FullLoader)
-
-def _callback(pkg):
-    data = pkg.get("data")
-    if data is None:
-        return
-
-    ic(data.get("liveMeasurement")['power'])
-    tsdb.insert_ts("tibber","power",data.get("liveMeasurement")['power'])
-
+with open("config.yaml") as f:
+    config = yaml.load(f, Loader=yaml.FullLoader)
 
 from gql import Client, gql
 from gql.transport.aiohttp import AIOHTTPTransport
 from gql.transport.websockets import WebsocketsTransport
 
 # Select your transport with a defined url endpoint
-transport = WebsocketsTransport(url="wss://websocket-api.tibber.com/v1-beta/gql/subscriptions", headers={'Authorization': 'REDACTED'})
+transport = WebsocketsTransport(
+    url="wss://websocket-api.tibber.com/v1-beta/gql/subscriptions",
+    headers={"Authorization": "REDACTED"},
+)
 
-# Create a GraphQL client using the defined transport
-client = Client(transport=transport, fetch_schema_from_transport=True)
 
 def wdHandler():
-    ic("No data received for {WATCHDOG_TIMER} seconds, exiting")
+    ic("No data received for time limit, quitting", WATCHDOG_TIMER)
+    runstatus = False
     sys.exit(1)
 
 wd = watchdog.Watchdog(WATCHDOG_TIMER, wdHandler)
 
+client = None
+runstatus = True
+
+
 def main():
+    # Create a GraphQL client using the defined transport
+    client = Client(transport=transport, fetch_schema_from_transport=True)
+
     # Provide a GraphQL query
     query = gql(
         f"""
@@ -59,6 +59,7 @@ def main():
         }}
     """
     )
+
     # Execute the query on the transport
     subgen = client.subscribe(query)
 
@@ -67,11 +68,16 @@ def main():
         for value in ['power', 'voltagePhase1', 'voltagePhase2', 'voltagePhase3', 'currentL1', 'currentL2', 'currentL3' ]:
             ic(value,result['liveMeasurement'][value])
             tsdb.insert_ts("tibber",value,result['liveMeasurement'][value])
+
         wd.reset()
 
-while(True):
+
+while True:
     try:
         main()
     except ConnectionClosedError:
-        ic("Received connectionClosedError, restarting")
+        ic("Received connectionClosedError, quitting")
+        sys.exit(1)
+        ic("exit failed")
+
     sleep(10)
