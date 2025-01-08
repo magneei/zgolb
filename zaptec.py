@@ -7,7 +7,7 @@ from math import sqrt
 zaptec_initalized = False
 constants = None
 observation_lookup = {}
-
+last_amps = 0
 
 class ZaptecAuth:
     def __init__(self, username, password):
@@ -93,17 +93,20 @@ def charger_info(charger, auth):
 
 
 def charger_set_amps(charger_id, auth, amps):
-    ic("Setting amps", amps)
+    if(True):
+        ic("Setting amps", amps)
+        payload = {"maxChargeCurrent": amps}
 
-    payload = {"maxChargeCurrent": amps}
+        r = requests.post(
+    	    f"https://api.zaptec.com/api/chargers/{charger_id}/update",
+    	    headers=auth.auth_header,
+    	    json=payload,
+		)
 
-    r = requests.post(
-        f"https://api.zaptec.com/api/chargers/{charger_id}/update",
-        headers=auth.auth_header,
-        json=payload,
-    )
+        last_amps = amps
 
-    return r
-
+        return r
+    else:
+        ic("Setting amps, but no change", amps, last_amps)
 
 init()
