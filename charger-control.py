@@ -25,32 +25,64 @@ while True:
     ic("Average", avg_power, avg_charge)
 
     zpdata = zaptec.charger_info(config["zaptec-charger-id"], zpauth)
+    
+    # Log all relevant charging data
+    for field in [
+        "TotalChargePower",
+        "CurrentPhase1",
+        "CurrentPhase2",
+        "CurrentPhase3",
+        "VoltagePhase1",
+        "VoltagePhase2",
+        "VoltagePhase3",
+        "ActivePhases"
+    ]:
+        if field in zpdata:
+            measurement_name = field.lower().replace("phase", "_l")
+            tsdb.insert_ts("zaptec", measurement_name, float(zpdata[field]))
 
-    if "TotalChargePower" in zpdata:
-        tsdb.insert_ts("zaptec", "chargepower", float(zpdata["TotalChargePower"]))
 
-    if avg_power:
-        if avg_power > config["power-threshold"]:
-            ic("Power over threshold")
+    # Get per-phase current readings
+    current_l1 = tsdb.avg_measurement("tibber", "currentL1")
+    current_l2 = tsdb.avg_measurement("tibber", "currentL2")
+    current_l3 = tsdb.avg_measurement("tibber", "currentL3")
+    
+    # Get charger phase currents
+    charge_l1 = tsdb.avg_measurement("zaptec", "current_l1")
+    charge_l2 = tsdb.avg_measurement("zaptec", "current_l2")
+    charge_l3 = tsdb.avg_measurement("zaptec", "current_l3")
 
-        charging_budget = float(config["power-threshold"]) - avg_power + avg_charge
+    # Set to 0 if no charging data
+    charge_l1 = charge_l1 if charge_l1 is not None else 0
+    charge_l2 = charge_l2 if charge_l2 is not None else 0
+    charge_l3 = charge_l3 if charge_l3 is not None else 0
 
-        # amps calculated for IT real 3 phase charging
-        charging_budget_amps = int(charging_budget / 230 / sqrt(3))
+    ic("House currents", current_l1, current_l2, current_l3)
+    ic("Charge currents", charge_l1, charge_l2, charge_l3)
+
+    if all([current_l1, current_l2, current_l3]):  # Make sure we have all phase readings
+        # Calculate non-charging load per phase
+        base_load_l1 = current_l1 - charge_l1
+        base_load_l2 = current_l2 - charge_l2
+        base_load_l3 = current_l3 - charge_l3
+        
+        # Find the highest loaded phase
+        max_base_load = max(base_load_l1, base_load_l2, base_load_l3)
+        
+        # Calculate available capacity based on the most loaded phase
+        current_threshold = float(config["current-threshold"])
+        charging_budget_amps = int(current_threshold - max_base_load)
+        
+        ic("Base loads", base_load_l1, base_load_l2, base_load_l3)
+        ic("Max base load", max_base_load)
         ic("Calculated amps before sanitizing", charging_budget_amps)
+        
         charging_budget_amps = min(POWER_MAX_AMPS, charging_budget_amps)
         charging_budget_amps = max(POWER_MIN_AMPS, charging_budget_amps)
 
-        # Amps are adjusted regardless of charging status, which is a bit noisy
         ic("Adjusting amps to budget", charging_budget_amps)
-        ic(
-            zaptec.charger_set_amps(
-                config["zaptec-charger-id"], zpauth, charging_budget_amps
-            )
-        )
+        ic(zaptec.charger_set_amps(config["zaptec-charger-id"], zpauth, charging_budget_amps))
     else:
-        ic(
-            "avg_power data missing. Setting charging_budget_amps to minimum value for failsafe"
-        )
+        ic("Phase current data missing. Setting charging_budget_amps to minimum value for failsafe")
         ic(zaptec.charger_set_amps(config["zaptec-charger-id"], zpauth, POWER_MIN_AMPS))
     time.sleep(60)

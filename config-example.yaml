@@ -5,3 +5,4 @@ zaptec-user: "<zaptec user>"
 zaptec-password: "<zaptec password>"
 zaptec-charger-id: "<charger id (from zaptec)>"
 power-threshold: <threshold in watts, eg 10000>
+current-threshold: 40  # Adjust based on your main fuse rating
