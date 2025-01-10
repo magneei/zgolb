@@ -27,6 +27,7 @@ def avg_measurement(measurement, field, minutes=5):
     query = f"""from(bucket: "zgolb")
     |> range(start: -{minutes}m)
     |> filter(fn: (r) => r._measurement == "{measurement}")
+    |> filter(fn: (r) => r._field == "{field}")
     |> mean()"""
     tables = query_api.query(query, org="charge")
 
