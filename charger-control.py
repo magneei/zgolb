@@ -69,12 +69,18 @@ while True:
         # Find the highest loaded phase
         max_base_load = max(base_load_l1, base_load_l2, base_load_l3)
         
+        # Get number of active charging phases
+        active_phases = tsdb.avg_measurement("zaptec", "activephases")
+        if active_phases is None or active_phases < 1:
+            active_phases = 1  # Fallback to single phase if unknown
+            
         # Calculate available capacity based on the most loaded phase
         current_threshold = float(config["current-threshold"])
-        charging_budget_amps = int(current_threshold - max_base_load)
+        charging_budget_amps = int((current_threshold - max_base_load) * active_phases)
         
         ic("Base loads", base_load_l1, base_load_l2, base_load_l3)
         ic("Max base load", max_base_load)
+        ic("Active phases", active_phases)
         ic("Calculated amps before sanitizing", charging_budget_amps)
         
         charging_budget_amps = min(POWER_MAX_AMPS, charging_budget_amps)
