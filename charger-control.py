@@ -69,10 +69,8 @@ while True:
         # Find the highest loaded phase
         max_base_load = max(base_load_l1, base_load_l2, base_load_l3)
         
-        # Get number of active charging phases
-        active_phases = tsdb.avg_measurement("zaptec", "activephases")
-        if active_phases is None or active_phases < 1:
-            active_phases = 1  # Fallback to single phase if unknown
+        # Get number of active charging phases directly from Zaptec data
+        active_phases = float(zpdata.get("ActivePhases", 1))  # Default to 1 if not available
             
         # Calculate available capacity based on the most loaded phase
         current_threshold = float(config["current-threshold"])
