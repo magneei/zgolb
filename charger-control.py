@@ -70,11 +70,16 @@ while True:
         max_base_load = max(base_load_l1, base_load_l2, base_load_l3)
         
         # Get number of active charging phases directly from Zaptec data
-        active_phases = float(zpdata.get("ActivePhases", 1))  # Default to 1 if not available
+        active_phases = int(zpdata.get("ActivePhases", 3))  # Default to 1 if not availabl
             
         # Calculate available capacity based on the most loaded phase
         current_threshold = float(config["current-threshold"])
-        charging_budget_amps = int((current_threshold - max_base_load) * active_phases)
+        if(sum(sorted([int(charge_l1), int(charge_l2), int(charge_l3)])[0:2]) > 0):
+            charging_budget_amps = int((current_threshold - max_base_load)*sqrt(3))
+        else: 
+            ic("1 phase charging")
+            charging_budget_amps = int((current_threshold - max_base_load)*sqrt(3))
+            #charging_budget_amps = int((current_threshold - max_base_load))
         
         ic("Base loads", base_load_l1, base_load_l2, base_load_l3)
         ic("Max base load", max_base_load)
