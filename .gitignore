@@ -1,0 +1,8 @@
+config.yaml
+*.db
+*.ipynb
+.ipynb_checkpoints/
+__pycache__/
+*.pyc
+tests/
+.env

@@ -26,6 +26,9 @@ while True:
 
     zpdata = zaptec.charger_info(config["zaptec-charger-id"], zpauth)
     
+    # Log raw API response to see all available fields
+    ic("Full Zaptec response:", zpdata)
+    
     # Log all relevant charging data
     for field in [
         "TotalChargePower",
@@ -70,7 +73,7 @@ while True:
         max_base_load = max(base_load_l1, base_load_l2, base_load_l3)
         
         # Get number of active charging phases directly from Zaptec data
-        active_phases = int(zpdata.get("ActivePhases", 3))  # Default to 1 if not availabl
+        active_phases = int(zpdata.get("ActivePhases", 3))  # Default to 3 if not available
             
         # Calculate available capacity based on the most loaded phase
         current_threshold = float(config["current-threshold"])

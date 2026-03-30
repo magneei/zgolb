@@ -23,7 +23,7 @@ from gql.transport.websockets import WebsocketsTransport
 # Select your transport with a defined url endpoint
 transport = WebsocketsTransport(
     url="wss://websocket-api.tibber.com/v1-beta/gql/subscriptions",
-    headers={"Authorization": "REDACTED"},
+    headers={"Authorization": config['tibber-token']},
 )
 
 
