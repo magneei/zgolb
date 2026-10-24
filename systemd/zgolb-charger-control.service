@@ -1,0 +1,16 @@
+[Unit]
+Description=ZGoLB Zaptec charger load balancer
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=magne
+WorkingDirectory=/home/magne/src/zgolb
+ExecStart=/home/magne/src/zgolb/.venv/bin/python charger-control.py
+Environment=PYTHONUNBUFFERED=1
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

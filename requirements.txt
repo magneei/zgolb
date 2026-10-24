@@ -1,0 +1,5 @@
+pyyaml
+icecream
+requests
+influxdb-client
+gql[aiohttp,websockets]>=3.4,<4

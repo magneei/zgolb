@@ -9,6 +9,7 @@ from time import sleep
 from websockets.exceptions import ConnectionClosedError
 import watchdog
 import sys
+import os
 
 # Constants
 WATCHDOG_TIMER = 180
@@ -30,7 +31,8 @@ transport = WebsocketsTransport(
 def wdHandler():
     ic("No data received for time limit, quitting", WATCHDOG_TIMER)
     runstatus = False
-    sys.exit(1)
+    # sys.exit() in a Timer thread only ends the thread; kill the process so systemd restarts it
+    os._exit(1)
 
 wd = watchdog.Watchdog(WATCHDOG_TIMER, wdHandler)
 
