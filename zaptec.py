@@ -9,9 +9,14 @@ constants = None
 observation_lookup = {}
 last_amps = 0
 
+# Seconds before an API call gives up, so a hung request crashes the script and systemd restarts it
+REQUEST_TIMEOUT = 30
+
 class ZaptecAuth:
     def __init__(self, username, password):
-        self.auth(username, password)
+        self.username = username
+        self.password = password
+        self.auth()
 
     def parse_auth_data(self, auth_data):
         self.auth_data = auth_data
@@ -21,10 +26,11 @@ class ZaptecAuth:
         )
         self._auth_header = {"Authorization": "Bearer " + auth_data["access_token"]}
 
-    def auth(self, username, password):
-        payload = {"grant_type": "password", "username": username, "password": password}
+    def auth(self):
+        payload = {"grant_type": "password", "username": self.username, "password": self.password}
 
-        r = requests.post("https://api.zaptec.com/oauth/token", data=payload)
+        r = requests.post("https://api.zaptec.com/oauth/token", data=payload, timeout=REQUEST_TIMEOUT)
+        r.raise_for_status()
 
         self.parse_auth_data(json.loads(r.text))
 
@@ -52,7 +58,8 @@ def init():
 
 
 def parse_constants():
-    r = requests.get("https://api.zaptec.com/api/constants")
+    r = requests.get("https://api.zaptec.com/api/constants", timeout=REQUEST_TIMEOUT)
+    r.raise_for_status()
 
     constants = json.loads(r.text)
 
@@ -73,8 +80,10 @@ def lookup_observation(observation):
 
 def charger_info(charger, auth):
     r = requests.get(
-        f"https://api.zaptec.com/api/chargers/{charger}/state", headers=auth.auth_header
+        f"https://api.zaptec.com/api/chargers/{charger}/state", headers=auth.auth_header,
+        timeout=REQUEST_TIMEOUT,
     )
+    r.raise_for_status()
 
     try:
         charger_state_data = json.loads(r.text)
@@ -101,7 +110,9 @@ def charger_set_amps(charger_id, auth, amps):
     	    f"https://api.zaptec.com/api/chargers/{charger_id}/update",
     	    headers=auth.auth_header,
     	    json=payload,
+    	    timeout=REQUEST_TIMEOUT,
 		)
+        r.raise_for_status()
 
         last_amps = amps
 
